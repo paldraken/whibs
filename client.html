@@ -1,0 +1,321 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+		<script src="https://unpkg.com/mithril/mithril.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/underscore@1.13.6/underscore-umd-min.js"></script>
+        <script type="text/javascript" src="https://unpkg.com/sql-formatter@latest/dist/sql-formatter.min.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/@highlightjs/cdn-assets@11.7.0/styles/default.min.css">
+        <script src="https://unpkg.com/@highlightjs/cdn-assets@11.7.0/highlight.min.js"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<style>
+			body {
+				margin: 10px;
+			}
+            .log-view {
+                padding: 10px;
+                margin-bottom: 15px;
+                border-bottom: 1px dotted #ccc;
+            }
+            .sql-cotainer {
+                height: 100%;
+                white-space: pre-wrap;
+            }
+            .list-head {
+                height: 40px;
+                border-bottom: 3px dotted black;
+            }
+            legend.connected {
+                color: green;
+            }
+            legend.disconnected {
+                color: red;
+            }
+		</style>
+	</head>
+	<body>
+
+		<script>
+// highlightjs config
+hljs.configure({
+    ignoreUnescapedHTML: true     
+});
+
+// https://github.com/sql-formatter-org/sql-formatter
+const formatterConfig = {
+    language: 'mysql',
+};
+
+var root = document.body
+
+const addr = "ws://127.0.0.1:8081/ws";
+
+
+class WsConn {
+    #events = [];
+    #connected = false;
+    #ws = null;
+    #addr = ""
+    get connected() {
+        return this.#connected;
+    }
+    constructor(addr) {
+        this.#addr = addr;
+        this.#events = {};
+    }
+
+    subscribe(eventName, callback) {
+        !this.#events[eventName] && (this.#events[eventName] = []);
+        this.#events[eventName].push(callback);
+    }
+
+    unsubscribe(eventName, callback) {
+        this.#events[eventName] = this.#events[eventName].filter(eventCallback => callback !== eventCallback);
+    }
+
+    #emit(eventName, args) {
+        const event = this.#events[eventName];
+        event && event.forEach(callback => callback.call(null, args));
+    }
+
+    send(command, payload) {
+        if (!this.connected) {
+            return;
+        }
+        this.#ws.send(JSON.stringify({command, payload}));
+    }
+
+    connect() {
+        this.#ws = new WebSocket(this.#addr);
+        this.#ws.addEventListener("open", (event) => {
+            this.#connected = true;
+            this.#emit("status", true);
+            
+        });
+        this.#ws.addEventListener("close", (event) => {
+            this.#connected = false;
+            this.#emit("status", false);
+            setTimeout(() => { this.connect();}, 3000);
+        });
+        this.#ws.addEventListener("error ", (event) => {
+            this.#connected = false;
+            this.#ws.close();
+            this.#emit("status", false);
+        });
+        this.#ws.addEventListener("message", (event) => {
+            const msg = JSON.parse(event.data);
+            this.#emit(msg.type, msg.payload);
+            this.#connected = true;
+        });
+    }
+}
+
+const wsCon = new WsConn(addr);
+
+class Filters {
+    params = {
+        module: "crm",
+        table: "",
+        wholeSql: "",
+        trace: "",
+        pause: false,
+        showTrace: false
+    }
+
+    constructor() {
+        this.params = this.loadFromStorage();
+    }
+
+    apply() {
+        this.saveToLocalstorage();
+    }
+
+    saveToLocalstorage() {
+        localStorage.setItem("filters", JSON.stringify(this.params));
+    }
+
+    loadFromStorage() {
+        const data = localStorage.getItem("filters");
+        if (!data) {
+            return {...this.params, module: "crm"};
+        } else {
+            return {...this.params, ...JSON.parse(data)};
+        }
+    }
+}
+
+class Control {
+    #wsCon = null;
+    #status = "";
+    #filters = null;
+    set status(status) {
+        this.#status = status;  
+        m.redraw();
+    }
+    oninit(vnode) {
+        this.#filters = new Filters();
+		this.#wsCon = vnode.attrs.wsCon
+		this.connect();
+	}
+    connect() {
+        this.#wsCon.connect();
+        this.#wsCon.subscribe("status", (val) => {
+            if (val) {
+                this.applyFilter()
+            }
+            this.status = val ? "connected" : "disconnected";
+        });
+    }
+    view() {
+        return m("div", [
+            m("form", {class: "pure-form pure-form-stacked", onsubmit: this.applyFilter.bind(this)}, [
+                m("fieldset", [
+                    m("legend", {class: this.#status} ,"Фильтры. " + `Status: ${this.#status}`),
+                    m("input[type=text]", {
+                        placeholder: "Модуль", 
+                        value: this.#filters.params.module,
+                        oninput: e => this.#filters.params.module = e.target.value,
+                    }),
+                    m("input[type=text]", {
+                        placeholder: "table содержит", 
+                        value: this.#filters.params.table,
+                        oninput: e => this.#filters.params.table = e.target.value,
+                    }),
+                    m("input[type=text]", {
+                        placeholder: "SQL содержит", 
+                        value: this.#filters.params.wholeSql,
+                        oninput: e => this.#filters.params.wholeSql = e.target.value,
+                    }),
+                    m("input[type=text]", {
+                        placeholder: "Trace содержит", 
+                        value: this.#filters.params.trace,
+                        oninput: e => this.#filters.params.wholeSql = e.target.value,
+                    }),
+                    m("button[type=submit]", {
+                        class: "pure-button pure-button-primary"
+                    }, "Применить фильтр"),
+                    m("div", [
+                        m("button", {
+                            class: "pure-button",
+                            onclick: () => {
+                                this.#filters.params.pause = !this.#filters.params.pause;
+                                this.applyFilter();
+                                return false;
+                            }
+                        }, this.#filters.params.pause ? "Снять с паузы" : "Пауза"),
+                    ])
+                ])
+            ]),
+        ]);
+    }
+    applyFilter() {
+        this.#wsCon.send("filter", this.#filters.params);
+        this.#filters.saveToLocalstorage()
+        return false;
+    }
+}
+
+let LogView = {
+    sql: "",
+    sesClass: "",
+    oninit: function(vnode) {
+        this.sql = hljs.highlight(vnode.attrs.row.sql, {language: 'sql'}).value;
+    },
+    view: function(vnode) {
+        return m("div", {class: "log-view pure-g"}, [
+            m("div", {class: "pure-u-1-5"}, [
+                m("div", [vnode.attrs.row.time]),
+                m("div", [vnode.attrs.row.table]),
+                m("div", [vnode.attrs.row.modules.join(" ")]),
+                m("button", {
+                    class: 'pure-button',
+                    onclick: () => {
+                        const sql = sqlFormatter.format(vnode.attrs.row.sql, formatterConfig);
+                        this.sql = hljs.highlight(sql, {language: 'sql'}).value;
+                        m.redraw();
+                    }
+                }, ['формат']),
+                m("button", {
+                    class: 'pure-button',
+                    onclick: () => {
+                        navigator.clipboard.writeText(vnode.attrs.row.sql);
+                    }
+                }, ['copy'])
+            ]),
+            m("pre", {class: "pure-u-4-5 sql-cotainer"}, [
+                m('code', {class: "language-sql"}, [m.trust(this.sql)])
+            ])
+        ]);
+    }
+}
+
+let LogList = {
+    list: [],
+    autoClear: true,
+    counter: 0,
+    oninit: function() {
+        wsCon.subscribe("debug_row", (data) => {
+            this.list.push(data);
+            _.throttle(m.redraw(), 500);
+            _.throttle(this.clearOld(), 1000);
+        })
+    },
+    addToList(data) {
+        data.key = this.counter++;
+        this.list.push(data);
+    },
+    clearOld: function() {
+        if (!this.autoClear) {
+            return;
+        }
+        if (this.list.length > 1000) {
+            this.list.splice(0, this.list.length - 200); 
+            m.redraw();
+        }
+    },
+    getList: function() {
+        return this.list;
+    },
+    view: function() {
+        return m("div", {class: 'list-head'}, [
+            m("div", {class: "pure-g"},  [
+                m("div", {class: "pure-u-1-12"}, [m("b", ["size: " + this.list.length])]),
+                m("div", {class: "pure-u-1-6"}, [
+                    m("button", {
+                        class: "pure-button",
+                        onclick: () => {
+                            this.list = [];
+                            m.redraw();
+                        }
+                    }, ["Очистить"]),
+                ]),
+                m("div", {class: "pure-u-1-6"}, [m("label", [
+                    m("input[type=checkbox]", {
+                        checked: this.autoClear,
+                        oninput: e => this.autoClear = e.target.checked,
+                    }, ),
+                    "Подчищать лог при достижении 1000 записей"
+                ]),
+            ]),
+            m("debug-row", this.getList().map(function(val) {
+                return m(LogView, {key: val.key, row: val})
+            }))
+        ])
+        ])
+    }
+}
+
+m.mount(root, {
+    view: function() {
+        return m("div", {class: "pure-g"}, [
+            m("div", {class: "pure-u-1-5"}, [
+                m(Control, {wsCon: wsCon})
+            ]),
+            m("div", {class: "pure-u-4-5"}, [
+                m(LogList)
+            ])
+        ],)
+    }
+})
+</script>
+	</body>
+</html>

@@ -30,6 +30,12 @@
             legend.disconnected {
                 color: red;
             }
+            .view-trace {
+                margin-top: 10px;
+            }
+            .button-xsmall {
+                font-size: 70%;
+            }
 		</style>
 	</head>
 	<body>
@@ -217,6 +223,7 @@ class Control {
 let LogView = {
     sql: "",
     sesClass: "",
+    showTrace: false,
     oninit: function(vnode) {
         this.sql = hljs.highlight(vnode.attrs.row.sql, {language: 'sql'}).value;
     },
@@ -226,6 +233,7 @@ let LogView = {
                 m("div", [vnode.attrs.row.time]),
                 m("div", [vnode.attrs.row.table]),
                 m("div", [vnode.attrs.row.modules.join(" ")]),
+                m("div", [vnode.attrs.row.date.toLocaleString()]),
                 m("button", {
                     class: 'pure-button',
                     onclick: () => {
@@ -242,7 +250,15 @@ let LogView = {
                 }, ['copy'])
             ]),
             m("pre", {class: "pure-u-4-5 sql-cotainer"}, [
-                m('code', {class: "language-sql"}, [m.trust(this.sql)])
+                m('code', {class: "language-sql"}, [m.trust(this.sql)]),
+                m('div', {class: "view-trace"}, [
+                    this.showTrace 
+                        ? vnode.attrs.row.trace.map(t => m("div", [t]))
+                        : m('a', {
+                            class: "button-xsmall pure-button",
+                            onclick: (e) => { e.preventDefault(); this.showTrace = !this.showTrace }
+                        }, 'trace')
+                ])
             ])
         ]);
     }
@@ -254,13 +270,14 @@ let LogList = {
     counter: 0,
     oninit: function() {
         wsCon.subscribe("debug_row", (data) => {
-            this.list.push(data);
+            this.addToList(data);
             _.throttle(m.redraw(), 500);
             _.throttle(this.clearOld(), 1000);
         })
     },
     addToList(data) {
         data.key = this.counter++;
+        data.date = new Date();
         this.list.push(data);
     },
     clearOld: function() {
@@ -273,7 +290,7 @@ let LogList = {
         }
     },
     getList: function() {
-        return this.list;
+        return this.list.slice().reverse();
     },
     view: function() {
         return m("div", {class: 'list-head'}, [
@@ -296,10 +313,10 @@ let LogList = {
                     "Подчищать лог при достижении 1000 записей"
                 ]),
             ]),
+        ]),
             m("debug-row", this.getList().map(function(val) {
                 return m(LogView, {key: val.key, row: val})
             }))
-        ])
         ])
     }
 }

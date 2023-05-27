@@ -24,10 +24,10 @@
                 height: 40px;
                 border-bottom: 3px dotted black;
             }
-            legend.connected {
+            .connected {
                 color: green;
             }
-            legend.disconnected {
+            .disconnected {
                 color: red;
             }
             .view-trace {
@@ -53,20 +53,29 @@ const formatterConfig = {
 
 var root = document.body
 
-const addr = "ws://127.0.0.1:8081/ws";
-
 
 class WsConn {
     #events = [];
     #connected = false;
     #ws = null;
-    #addr = ""
     get connected() {
         return this.#connected;
     }
-    constructor(addr) {
-        this.#addr = addr;
+    constructor() {
         this.#events = {};
+    }
+
+    set addr(addr) {
+        localStorage.setItem("ws_addr", addr)
+        this.#reconnect();
+    }
+
+    get addr() {
+        const stored = localStorage.getItem("ws_addr");
+        if (!stored) {
+            return "ws://127.0.0.1:8081/ws";
+        }
+        return stored;
     }
 
     subscribe(eventName, callback) {
@@ -90,8 +99,12 @@ class WsConn {
         this.#ws.send(JSON.stringify({command, payload}));
     }
 
+    #reconnect() {
+        this.#ws.close();
+    }
+
     connect() {
-        this.#ws = new WebSocket(this.#addr);
+        this.#ws = new WebSocket(this.addr);
         this.#ws.addEventListener("open", (event) => {
             this.#connected = true;
             this.#emit("status", true);
@@ -115,7 +128,7 @@ class WsConn {
     }
 }
 
-const wsCon = new WsConn(addr);
+const wsCon = new WsConn();
 
 class Filters {
     params = {
@@ -175,7 +188,18 @@ class Control {
         return m("div", [
             m("form", {class: "pure-form pure-form-stacked", onsubmit: this.applyFilter.bind(this)}, [
                 m("fieldset", [
-                    m("legend", {class: this.#status} ,"Фильтры. " + `Status: ${this.#status}`),
+                    m("legend", [
+                        m("div", {class: this.#status}, `Фильтры. Status: ${this.#status}`),
+                        m("span", {
+                            style: "cursor: pointer; border-bottom: 1px dotted black",
+                            onclick: () => {
+                                const result = prompt("Устанвить адрес", this.#wsCon.addr);
+                                if (result) {
+                                    this.#wsCon.addr = result;
+                                }
+                            }
+                        }, "настроить подключение")
+                    ]),
                     m("input[type=text]", {
                         placeholder: "Модуль", 
                         value: this.#filters.params.module,
@@ -214,6 +238,9 @@ class Control {
         ]);
     }
     applyFilter() {
+        if (!this.#wsCon.connected) {
+            return
+        }
         this.#wsCon.send("filter", this.#filters.params);
         this.#filters.saveToLocalstorage()
         return false;

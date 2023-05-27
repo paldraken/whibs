@@ -12,7 +12,6 @@ import (
 )
 
 func wsEndpoint(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.RemoteAddr)
 	conn, _, _, err := ws.UpgradeHTTP(r, w)
 	if err != nil {
 		log.Println(err)

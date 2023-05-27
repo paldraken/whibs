@@ -1,9 +1,5 @@
 package configs
 
-import (
-	"github.com/spf13/viper"
-)
-
 type serverConfig struct {
 	Enable bool
 	Port   int
@@ -12,18 +8,10 @@ type serverConfig struct {
 var ServerConfig serverConfig
 
 func init() {
-	initViper()
+	initConfig()
 
 	ServerConfig = serverConfig{
-		Port:   serverPort(),
-		Enable: isEnable(),
+		Port:   k.Int("server.port"),
+		Enable: k.Bool("server.enable"),
 	}
-}
-
-func isEnable() bool {
-	return viper.GetBool("server.enable")
-}
-
-func serverPort() int {
-	return viper.GetInt("server.port")
 }

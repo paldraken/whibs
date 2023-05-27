@@ -64,7 +64,7 @@ func WatchChanges(path string, done chan bool, lines chan string) {
 					}
 
 					// trunkate file
-					if configs.ShrinkLog != nil && configs.ShrinkLog.Cmp(big.NewInt(currentSize)) < 0 {
+					if configs.TruncateLog != nil && configs.TruncateLog.Cmp(big.NewInt(currentSize)) < 0 {
 						err := os.Truncate(configs.SqlLogPath, 0)
 						if err != nil {
 							fmt.Println(err)

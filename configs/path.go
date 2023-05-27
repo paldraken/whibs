@@ -1,22 +1,17 @@
 package configs
 
 import (
-	"fmt"
 	"log"
-
-	"github.com/spf13/viper"
 )
 
 var SqlLogPath string
 
 func init() {
-	initViper()
+	initConfig()
 
-	SqlLogPath = viper.GetString("path")
-
-	fmt.Println("path", SqlLogPath)
+	SqlLogPath = k.String("path")
 
 	if SqlLogPath == "" {
-		log.Fatal("path to sql log is empty")
+		log.Fatal("path to sql log is required")
 	}
 }

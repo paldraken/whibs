@@ -2,19 +2,19 @@ package configs
 
 import (
 	"github.com/paldraken/sqldebugwatch/internal/types"
-	"github.com/spf13/viper"
 )
 
 var ConsoleFilter types.Filter
 
 func init() {
-	initViper()
+	initConfig()
+
 	ConsoleFilter = types.Filter{
-		Module:    viper.GetString("console_filter.module"),
-		Table:     viper.GetString("console_filter.table"),
-		WholeSql:  "",
-		Trace:     "",
-		ShowTrace: viper.GetBool("console_filter.trace"),
-		Pause:     viper.GetBool("console_filter.pause"),
+		Module:    k.String("filter.module"),
+		Table:     k.String("filter.table"),
+		WholeSql:  k.String("filter.sql"),
+		Trace:     k.String("filter.trace"),
+		ShowTrace: k.Bool("filter.show_trace"),
+		Pause:     k.Bool("filter.pause"),
 	}
 }

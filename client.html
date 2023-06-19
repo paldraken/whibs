@@ -36,6 +36,10 @@
             .button-xsmall {
                 font-size: 70%;
             }
+            .debug-container {
+                height: calc(100vh - 55px);
+                overflow-y: scroll;
+            }
 		</style>
 	</head>
 	<body>
@@ -166,6 +170,7 @@ class Control {
     #wsCon = null;
     #status = "";
     #filters = null;
+    #notes = ""
     set status(status) {
         this.#status = status;  
         m.redraw();
@@ -174,6 +179,7 @@ class Control {
         this.#filters = new Filters();
 		this.#wsCon = vnode.attrs.wsCon
 		this.connect();
+        this.#notes = localStorage.getItem("sql-debug-notes", "");
 	}
     connect() {
         this.#wsCon.connect();
@@ -183,6 +189,10 @@ class Control {
             }
             this.status = val ? "connected" : "disconnected";
         });
+    }
+    changeNotes(e) {
+        this.#notes = e.target.value;
+        _.throttle((() => { localStorage.setItem("sql-debug-notes", this.#notes);})(), 100)
     }
     view() {
         return m("div", [
@@ -218,7 +228,7 @@ class Control {
                     m("input[type=text]", {
                         placeholder: "Trace содержит", 
                         value: this.#filters.params.trace,
-                        oninput: e => this.#filters.params.wholeSql = e.target.value,
+                        oninput: e => this.#filters.params.trace = e.target.value,
                     }),
                     m("button[type=submit]", {
                         class: "pure-button pure-button-primary"
@@ -232,6 +242,14 @@ class Control {
                                 return false;
                             }
                         }, this.#filters.params.pause ? "Снять с паузы" : "Пауза"),
+                    ]),
+                    m("div", {class: "notes"}, [
+                        m("textarea", {
+                            rows: "20",
+                            oninput: this.changeNotes.bind(this),
+                            placeholder: 'Заметки',
+                            value: this.#notes,
+                        }),
                     ])
                 ])
             ]),
@@ -341,7 +359,7 @@ let LogList = {
                 ]),
             ]),
         ]),
-            m("debug-row", this.getList().map(function(val) {
+            m("div", {class: "debug-container"}, this.getList().map(function(val) {
                 return m(LogView, {key: val.key, row: val})
             }))
         ])

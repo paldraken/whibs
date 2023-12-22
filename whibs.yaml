@@ -1,15 +1,6 @@
 
 path: /home/anton/bitrix24/mysql_debug.sql # путь к файлу
-truncate_log: 2MB # Обезать лог при достижении размера. -1 для отключения
+truncate_log: 2MB # Обрезать лог при достижении размера. -1 для отключения
 
 server:
-  enable: true # Не запускать ws сервер
   port: 8081
-
-filter:
-  module: crm    # фильтр по модулю
-  table:       # по таблице
-  sql:         # по всему запросу
-  trace:
-  show_trace: false   # показывать trace
-  pause: true    # отключить вывовд в консоль

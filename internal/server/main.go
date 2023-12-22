@@ -11,6 +11,24 @@ import (
 	"github.com/paldraken/whibs/internal/types"
 )
 
+func Start() error {
+
+	http.HandleFunc("/ws", wsEndpoint)
+
+	port := fmt.Sprintf("%d", configs.ServerConfig.Port)
+	fmt.Println("Server will start on 127.0.0.1:" + port)
+	err := http.ListenAndServe(":"+port, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func NotifyWsUsers(row *types.SqlDebugRow) {
+	cns.broadcast(row)
+}
+
 func wsEndpoint(w http.ResponseWriter, r *http.Request) {
 	conn, _, _, err := ws.UpgradeHTTP(r, w)
 	if err != nil {
@@ -35,26 +53,4 @@ func wsEndpoint(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}()
-}
-
-func Start() error {
-
-	if !configs.ServerConfig.Enable {
-		return nil
-	}
-
-	http.HandleFunc("/ws", wsEndpoint)
-
-	port := fmt.Sprintf("%d", configs.ServerConfig.Port)
-	fmt.Println("Server will start on 127.0.0.1:" + port)
-	err := http.ListenAndServe(":"+port, nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func NotifyWsUsers(row *types.SqlDebugRow) {
-	cns.broadcast(row)
 }

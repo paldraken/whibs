@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/paldraken/sqldebugwatch/configs"
+	"github.com/paldraken/whibs/configs"
 )
 
 func WatchChanges(path string, done chan bool, lines chan string) {

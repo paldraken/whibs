@@ -3,12 +3,12 @@ package main
 import (
 	"log"
 
-	"github.com/paldraken/sqldebugwatch/configs"
-	"github.com/paldraken/sqldebugwatch/internal/parser"
-	"github.com/paldraken/sqldebugwatch/internal/server"
-	"github.com/paldraken/sqldebugwatch/internal/types"
-	"github.com/paldraken/sqldebugwatch/internal/watcher"
-	"github.com/paldraken/sqldebugwatch/internal/wconsole"
+	"github.com/paldraken/whibs/configs"
+	"github.com/paldraken/whibs/internal/parser"
+	"github.com/paldraken/whibs/internal/server"
+	"github.com/paldraken/whibs/internal/types"
+	"github.com/paldraken/whibs/internal/watcher"
+	"github.com/paldraken/whibs/internal/wconsole"
 )
 
 func main() {

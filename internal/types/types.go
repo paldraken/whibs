@@ -3,7 +3,7 @@ package types
 import (
 	"strings"
 
-	"github.com/paldraken/sqldebugwatch/internal/utils"
+	"github.com/paldraken/whibs/internal/utils"
 )
 
 type SqlDebugRow struct {

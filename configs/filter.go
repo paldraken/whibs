@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"github.com/paldraken/sqldebugwatch/internal/types"
+	"github.com/paldraken/whibs/internal/types"
 )
 
 var ConsoleFilter types.Filter

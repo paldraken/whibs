@@ -7,8 +7,8 @@ import (
 
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
-	"github.com/paldraken/sqldebugwatch/configs"
-	"github.com/paldraken/sqldebugwatch/internal/types"
+	"github.com/paldraken/whibs/configs"
+	"github.com/paldraken/whibs/internal/types"
 )
 
 func wsEndpoint(w http.ResponseWriter, r *http.Request) {

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/paldraken/sqldebugwatch/internal/types"
+	"github.com/paldraken/whibs/internal/types"
 )
 
 type baseCommand struct {

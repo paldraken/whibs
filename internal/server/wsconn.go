@@ -9,7 +9,7 @@ import (
 
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
-	"github.com/paldraken/sqldebugwatch/internal/types"
+	"github.com/paldraken/whibs/internal/types"
 )
 
 type dMsg struct {

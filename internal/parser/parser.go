@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/paldraken/sqldebugwatch/internal/types"
+	"github.com/paldraken/whibs/internal/types"
 )
 
 func Lines(line chan string, debug chan *types.SqlDebugRow) {

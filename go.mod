@@ -1,4 +1,4 @@
-module github.com/paldraken/sqldebugwatch
+module github.com/paldraken/whibs
 
 go 1.19
 

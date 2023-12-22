@@ -3,8 +3,8 @@ package wconsole
 import (
 	"fmt"
 
-	"github.com/paldraken/sqldebugwatch/configs"
-	"github.com/paldraken/sqldebugwatch/internal/types"
+	"github.com/paldraken/whibs/configs"
+	"github.com/paldraken/whibs/internal/types"
 )
 
 func Print(row *types.SqlDebugRow) {

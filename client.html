@@ -50,10 +50,18 @@ hljs.configure({
     ignoreUnescapedHTML: true     
 });
 
+let sqlDialect;
+(() => {
+    sqlDialect = localStorage.getItem("sql_dialect") || 'mysql'
+})();
+
 // https://github.com/sql-formatter-org/sql-formatter
-const formatterConfig = {
-    language: 'mysql',
-};
+function formatConfig() {
+    console.log(sqlDialect);
+    return {
+        language: sqlDialect
+    }
+}
 
 var root = document.body
 
@@ -282,7 +290,7 @@ let LogView = {
                 m("button", {
                     class: 'pure-button',
                     onclick: () => {
-                        const sql = sqlFormatter.format(vnode.attrs.row.sql, formatterConfig);
+                        const sql = sqlFormatter.format(vnode.attrs.row.sql, formatConfig());
                         this.sql = hljs.highlight(sql, {language: 'sql'}).value;
                         m.redraw();
                     }
@@ -318,7 +326,7 @@ let LogList = {
             this.addToList(data);
             _.throttle(m.redraw(), 500);
             _.throttle(this.clearOld(), 1000);
-        })
+        });
     },
     addToList(data) {
         data.key = this.counter++;
@@ -341,7 +349,7 @@ let LogList = {
         return m("div", {class: 'list-head'}, [
             m("div", {class: "pure-g"},  [
                 m("div", {class: "pure-u-1-12"}, [m("b", ["size: " + this.list.length])]),
-                m("div", {class: "pure-u-1-6"}, [
+                m("div", {class: "pure-u-1-12"}, [
                     m("button", {
                         class: "pure-button",
                         onclick: () => {
@@ -356,9 +364,25 @@ let LogList = {
                         oninput: e => this.autoClear = e.target.checked,
                     }, ),
                     "Подчищать лог при достижении 1000 записей"
+                    ]),
                 ]),
+                m("div", {class: "pure-u-1-6"}, [m("label", [
+                    m('select', 
+                        {
+                            onchange: e => {
+                                sqlDialect = e.target.value;
+                                localStorage.setItem("sql_dialect", sqlDialect)
+                            },
+                            value: sqlDialect
+                        },
+                        [
+                            m('option', 'mysql'),
+                            m('option', 'postgresql'),
+                        ]
+                    ),
+                    "SQL диалект"
+                ])]),
             ]),
-        ]),
             m("div", {class: "debug-container"}, this.getList().map(function(val) {
                 return m(LogView, {key: val.key, row: val})
             }))

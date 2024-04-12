@@ -6,14 +6,15 @@ what happened in bitrix sql
 
 
 Чтобы не запутаться в идущем спаме можно установить фильтры по разным параметрам. 
-Позволяет отслеживать html клиент, он находится в файле `client.html`
+
+html клиент находится в файле `client.html`
 
 В битриксе лог включается в файле `bitrix/php_interface/dbconn.php`
 ```php
 $DBDebug = true;
 $DBDebugToFile = true;
 ```
-В корне установки должен появится файл `mysql_debug.sql` даже если используется postgres 
+В корне установки должен появится файл `mysql_debug.sql` ( имя файла не меняется даже если используется postgres)
 
 Собрать
 `go build -ldflags="-s -w" -o ./whibs .`
